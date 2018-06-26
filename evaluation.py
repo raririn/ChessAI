@@ -40,10 +40,14 @@ def evaluateBoard(board, side):
 
     white_score = white_piece_score
     black_score = black_piece_score
+    
     if side == WHITE:
         score = white_score - black_score
     elif side == BLACK:
         score = black_score - white_score
     else:
         raise ValueError('Bad side value.')
+    if board.is_stalemate():
+        return 0
+    
     return score

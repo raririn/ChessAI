@@ -11,7 +11,7 @@ def runGame(AI_option):
     print(game)
     while True:
         i = input('Continue?')
-        if i:
+        if i != 'quit':
             ret = game.turnPass()
             if ret:
                 print(ret)
@@ -35,7 +35,6 @@ class Game:
         # turns, and BLACK plays on odd turns.
         self.turn = 0
         self.board = initBoard()
-        self.maxDepth = 2
     
     def __str__(self):
         boardInfo = self.board.__str__() + '\n'
@@ -58,20 +57,29 @@ class Game:
             the game is over.'''
         if self.turn % 2 == 0:
             # If it's WHITE's turn:
-            agent = randomAgent(self.board, WHITE_AI, 2)
+            agent = greedyAgent(self.board, WHITE_AI, 2)
             move = agent.generateMove()
-            self.board.push(move)
+            if move:
+                self.board.push(move)
+                print("Current Score for BLACK:" + str(evaluateBoard(self.board, BLACK)))
+            else:
+                if self.board.is_checkmate():
+                    return 'Checkmate. WHITE loses.'
+                elif self.board.is_stalemate():
+                    return 'Stalemate.'
+
         if self.turn % 2 == 1:
             # If it's BLACK's turn:
-            agent = greedyAgent(self.board, BLACK_AI, 2)
+            agent = minimaxAgent(self.board, BLACK_AI, 3)
             move = agent.generateMove()
-            self.board.push(move)
+            if move:
+                self.board.push(move)
+                print("Current Score for WHITE:" + str(evaluateBoard(self.board, WHITE)))
+            else:
+                if self.board.is_checkmate():
+                    return 'Checkmate. BLACK loses.'
+                elif self.board.is_stalemate():
+                    return 'Stalemate.'
 
-        
-        if self.board.is_checkmate():
-            return 'checkmate'
-        elif self.board.is_stalemate():
-            return 'stalemate'
-        
         self.turnIncrement()
         return None
