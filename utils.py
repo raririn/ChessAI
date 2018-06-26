@@ -1,4 +1,5 @@
 import chess
+import time
 from random import choice as randChoice
 from random import random as rand
 from operator import attrgetter

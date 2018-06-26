@@ -11,8 +11,8 @@ class AI:
         # still we keep the parameter here in the basic AI.
         self.depth = depth
         self.side = side
-        #if self.side != self.board.turn:
-        #    raise ValueError('Not correct side assigned to agent.')
+        if self.side != self.board.turn:
+            raise ValueError('Not correct side assigned to agent.')
     
     def getLegalMoves(self):
         return list(self.board.legal_moves)
@@ -76,6 +76,7 @@ class greedyAgent(AI):
 
 
 class minimaxAgent(AI):
+    ''' An agent searching in a minimax tree with given depth. '''
     def generateMoveTree(self):
         moveTree = []
         for move in self.getLegalMoves():
@@ -158,10 +159,65 @@ class minimaxAgent(AI):
 
     
     def generateMove(self):
+        #print('generating,')
         moveTree = self.generateMoveTree()
         bestMoves = self.getMove(moveTree)
+        #print(bestMoves)
         if bestMoves:
             return randChoice(bestMoves)
         else:
             return None
         
+class alphabetaAgent(minimaxAgent):
+    ''' Minimax Agent with Alpha-beta prunning. Overrides 
+        calculatePoint() method to implement prunning. '''
+
+    def calculatePoint(self, node, alpha, beta):
+        def max_value(node, alpha, beta):
+            v = - float('inf')
+            for i in node.children:
+                v = max(v, i.pointAdvantage)
+                if v >= beta:
+                    return v, alpha, beta
+                alpha = max(alpha, v)
+            return v, alpha, beta
+        def min_value(node, alpha, beta):
+            v = float('inf')
+            for i in node.children:
+                v = min(v, i.pointAdvantage)
+                if v <= alpha:
+                    return v, alpha, beta
+                beta = min(beta, v)
+            return v, alpha, beta
+        if node.children:
+            # If the node has children, traverse the tree and run
+            # minimax on all children.
+            for child in node.children:
+                child.pointAdvantage = self.calculatePoint(child, alpha, beta)
+            if node.children[0].depth % 2 == 1:
+                # If the node's children has an odd depth, i.e.
+                # the node has an even depth. Therefore it is 
+                # a max state.
+                v, alpha, beta = max_value(node, alpha, beta)
+                return v
+            else:
+                v, alpha, beta = max_value(node, alpha, beta)
+                return v
+        else:
+            # If the node has no child, return the node's utility.
+            return node.pointAdvantage
+
+    def getMove(self, moveTree):
+        ''' Return all moves with highest point. '''
+        bestNodes = []
+        for node in moveTree:
+            alpha = - float('inf')
+            beta = float('inf')
+            node.pointAdvantage = self.calculatePoint(node, alpha, beta)
+            if not bestNodes:
+                bestNodes.append(node)
+            elif node > bestNodes[0]:
+                bestNodes = [node]
+            elif node == bestNodes[0]:
+                bestNodes.append(node)
+        return [node.move for node in bestNodes]

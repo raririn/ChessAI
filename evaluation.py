@@ -1,4 +1,5 @@
 from param import *
+from utils import *
 
 def evaluateBoard(board, side):
     KING_SCORE = 1000
@@ -38,13 +39,20 @@ def evaluateBoard(board, side):
     KNIGHT_SCORE * black_knight + \
     PAWN_SCORE * black_pawn
 
-    white_score = white_piece_score
-    black_score = black_piece_score
-    
+
+
     if side == WHITE:
-        score = white_score - black_score
+        white_mob_score = 0.5*len(list(board.legal_moves))
+        board.push(chess.Move.null())
+        black_mob_score = 0.5*len(list(board.legal_moves))
+        board.pop()
+        score = white_piece_score - black_piece_score + white_mob_score - black_mob_score
     elif side == BLACK:
-        score = black_score - white_score
+        black_mob_score = 0.5*len(list(board.legal_moves))
+        board.push(chess.Move.null())
+        white_mob_score = 0.5*len(list(board.legal_moves))
+        board.pop()
+        score = -(white_piece_score - black_piece_score + white_mob_score - black_mob_score)
     else:
         raise ValueError('Bad side value.')
     if board.is_stalemate():

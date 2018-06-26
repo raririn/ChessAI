@@ -56,9 +56,12 @@ class Game:
             going normally, and return a string containing the state if
             the game is over.'''
         if self.turn % 2 == 0:
+            start_time = time.time()
             # If it's WHITE's turn:
-            agent = greedyAgent(self.board, WHITE_AI, 2)
+            agent = minimaxAgent(self.board, WHITE_AI, 3)
             move = agent.generateMove()
+            end_time = time.time()
+            print("Performace: " + str(end_time - start_time) + 'sec.')
             if move:
                 self.board.push(move)
                 print("Current Score for BLACK:" + str(evaluateBoard(self.board, BLACK)))
@@ -69,9 +72,12 @@ class Game:
                     return 'Stalemate.'
 
         if self.turn % 2 == 1:
+            start_time = time.time()
             # If it's BLACK's turn:
-            agent = minimaxAgent(self.board, BLACK_AI, 3)
+            agent = alphabetaAgent(self.board, BLACK_AI, 3)
             move = agent.generateMove()
+            end_time = time.time()
+            print("Performace: " + str(end_time - start_time) + 'sec.')
             if move:
                 self.board.push(move)
                 print("Current Score for WHITE:" + str(evaluateBoard(self.board, WHITE)))
