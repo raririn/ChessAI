@@ -92,10 +92,13 @@ class minimaxAgent(AI):
     def populateNodeChildren(self, node):
         if not isinstance(node, MoveNode):
             raise TypeError('Bad argument given.')
-        node.pointAdvantage = evaluateBoard(self.board, self.side)
+        #node.pointAdvantage = evaluateBoard(self.board, self.side)
         node.depth = node.getDepth()
         if node.depth == self.depth:
+            node.pointAdvantage = evaluateBoard(self.board, self.side)
             return
+        else:
+            node.pointAdvantage = 0
         legalMoves = self.getLegalMoves()
         if not legalMoves:
             # No legal move means a terminal state is reached.
@@ -124,10 +127,17 @@ class minimaxAgent(AI):
                 v = max(v, i.pointAdvantage)
             return v
         def min_value(node):
+            #print("min_value called on")
+            #print(node)
             v = float('inf')
             for i in node.children:
                 v = min(v, i.pointAdvantage)
-            return v
+            #    print(i.pointAdvantage)
+            #return v
+            #print(node)
+            #print(min(node.children), min(node.children).pointAdvantage)
+            #print("Finish a call")
+            return min(node.children).pointAdvantage
         if node.children:
             # If the node has children, traverse the tree and run
             # minimax on all children.
@@ -161,8 +171,13 @@ class minimaxAgent(AI):
     def generateMove(self):
         #print('generating,')
         moveTree = self.generateMoveTree()
+        #print("moveTree")
+        #for i in moveTree:
+        #    print(i)
         bestMoves = self.getMove(moveTree)
-        #print(bestMoves)
+        #print("bestMoves")
+        #for i in bestMoves:
+        #    print(i)
         if bestMoves:
             return randChoice(bestMoves)
         else:
@@ -189,23 +204,25 @@ class alphabetaAgent(minimaxAgent):
                     return v, alpha, beta
                 beta = min(beta, v)
             return v, alpha, beta
+
+        # Main body
         if node.children:
             # If the node has children, traverse the tree and run
             # minimax on all children.
             for child in node.children:
-                child.pointAdvantage = self.calculatePoint(child, alpha, beta)
+                child.pointAdvantage, alpha, beta = self.calculatePoint(child, alpha, beta)
             if node.children[0].depth % 2 == 1:
                 # If the node's children has an odd depth, i.e.
                 # the node has an even depth. Therefore it is 
                 # a max state.
                 v, alpha, beta = max_value(node, alpha, beta)
-                return v
+                return v, alpha, beta
             else:
-                v, alpha, beta = max_value(node, alpha, beta)
-                return v
+                v, alpha, beta = min_value(node, alpha, beta)
+                return v, alpha, beta
         else:
             # If the node has no child, return the node's utility.
-            return node.pointAdvantage
+            return node.pointAdvantage, alpha, beta
 
     def getMove(self, moveTree):
         ''' Return all moves with highest point. '''
@@ -213,7 +230,7 @@ class alphabetaAgent(minimaxAgent):
         for node in moveTree:
             alpha = - float('inf')
             beta = float('inf')
-            node.pointAdvantage = self.calculatePoint(node, alpha, beta)
+            node.pointAdvantage, alpha, beta = self.calculatePoint(node, alpha, beta)
             if not bestNodes:
                 bestNodes.append(node)
             elif node > bestNodes[0]:
@@ -221,3 +238,54 @@ class alphabetaAgent(minimaxAgent):
             elif node == bestNodes[0]:
                 bestNodes.append(node)
         return [node.move for node in bestNodes]
+
+class quiescentAgent(minimaxAgent):
+    ''' An agent performs a quiescent search, but limiting the
+        upper bound of level of searching to 4.'''
+    def populateNodeChildren(self, node):
+        if not isinstance(node, MoveNode):
+            raise TypeError('Bad argument given.')
+        node.depth = node.getDepth()
+        # Change: The depth may exceed the search level.
+        if node.depth >= self.depth + 2:
+            node.pointAdvantage = evaluateBoard(self.board, self.side)
+            return
+        elif node.depth >= self.depth:
+            has_child = 0
+            legalMoves = self.getLegalMoves()
+            if not legalMoves:
+                if self.board.is_checkmate():
+                    return
+                elif self.board.is_stalemate():
+                    node.pointAdvantage = 0
+                    return
+                else:
+                    raise TypeError('Invalid board status.')
+            for move in legalMoves:
+                if self.board.is_capture(move):
+                    has_child = 1
+                    node.children.append(MoveNode(move, [], node))
+                    self.board.push(move)
+                    self.populateNodeChildren(node.children[-1])
+                    self.board.pop()
+            if has_child == 0:
+                node.pointAdvantage = evaluateBoard(self.board, self.side)
+                return
+            else:
+                node.pointAdvantage = 0
+        else:
+            node.pointAdvantage = 0
+        legalMoves = self.getLegalMoves()
+        if not legalMoves:
+            if self.board.is_checkmate():
+                return
+            elif self.board.is_stalemate():
+                node.pointAdvantage = 0
+                return
+            else:
+                raise TypeError('Invalid board status.')
+        for move in legalMoves:
+            node.children.append(MoveNode(move, [], node))
+            self.board.push(move)
+            self.populateNodeChildren(node.children[-1])
+            self.board.pop()

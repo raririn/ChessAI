@@ -4,24 +4,51 @@ from AI import *
 def initBoard():
     '''Initialize the board in the first state and return it.'''
     board = chess.Board('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    #board = chess.Board('6k1/6p1/7b/7R/8/8/8/K7 w KQkq - 0 80')    
     return board
 
-def runGame(AI_option):
+def runGame(AI_option, manual_option):
     game = Game(AI_option)
     print(game)
-    while True:
-        i = input('Continue?')
-        if i != 'quit':
-            ret = game.turnPass()
-            if ret:
-                print(ret)
-                print('Gameover.')
-                break
+    if manual_option == True:
+        while True:
+            i = input('Continue?')
+            if i != 'quit':
+                ret = game.turnPass()
+                if ret:
+                    print(ret)
+                    print('Gameover.')
+                    plt.plot(game.score_list)
+                    break
+                else:
+                    print(game)
             else:
-                print(game)
-        else:
-            print('User interrupt.')
-            break
+                print('User interrupt.')
+                break
+    else:
+        while True:
+                ret = game.turnPass()
+                if ret:
+                    print(ret)
+                    print('Gameover.')
+                    print( sum(game.white_timelist) / len(game.white_timelist) )
+                    print( sum(game.black_timelist) / len(game.black_timelist))
+                    plt.plot(game.score_list)
+                    plt.show()
+                    break
+                elif game.turn >= 80:
+                    print('Time out.')
+                    print(game.score_list)
+                    print(game.white_timelist)
+                    print(game.black_timelist)
+                    print( sum(game.white_timelist) / len(game.white_timelist) )
+                    print( sum(game.black_timelist) / len(game.black_timelist))
+                    plt.plot(game.score_list)
+                    plt.show()
+                    break
+                else:
+                    print(game)
+            
 
 class Game:
     def __init__(self, AI_option):
@@ -35,6 +62,9 @@ class Game:
         # turns, and BLACK plays on odd turns.
         self.turn = 0
         self.board = initBoard()
+        self.score_list = []
+        self.white_timelist = []
+        self.black_timelist = []
     
     def __str__(self):
         boardInfo = self.board.__str__() + '\n'
@@ -58,6 +88,7 @@ class Game:
         if self.turn % 2 == 0:
             start_time = time.time()
             # If it's WHITE's turn:
+            #agent = quiescentAgent(self.board, WHITE_AI, 2)
             agent = minimaxAgent(self.board, WHITE_AI, 3)
             move = agent.generateMove()
             end_time = time.time()
@@ -70,6 +101,8 @@ class Game:
                     return 'Checkmate. WHITE loses.'
                 elif self.board.is_stalemate():
                     return 'Stalemate.'
+            self.score_list.append(evaluateBoard(self.board, BLACK))
+            self.white_timelist.append(end_time - start_time)
 
         if self.turn % 2 == 1:
             start_time = time.time()
@@ -86,6 +119,7 @@ class Game:
                     return 'Checkmate. BLACK loses.'
                 elif self.board.is_stalemate():
                     return 'Stalemate.'
+            self.black_timelist.append(end_time - start_time)
 
         self.turnIncrement()
         return None

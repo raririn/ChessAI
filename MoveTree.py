@@ -22,10 +22,19 @@ class MoveNode:
     # two equal values. Two nodes are only equal if both
     # are checkmate state.
     # --- END ---
+    def __str__(self):
+        stri = self.move.__str__() + "\nchildren: "
+        if self.children:
+            for i in self.children:
+                stri += i.__str__()
+        else:
+            stri += "None"
+        stri += "\npoint: " + str(self.pointAdvantage) + "\ndepth:" + str(self.depth) + "\n"
+        return stri
 
     def __gt__(self, other):
         if not isinstance(other, MoveNode):
-            raise TypeError('Invalid camparison target.')
+            raise TypeError('Invalid target.')
         if self.is_checkmate and (not other.is_checkmate):
             return True
         elif (not self.is_checkmate) and other.is_checkmate:
@@ -36,14 +45,14 @@ class MoveNode:
     
     def __lt__(self, other):
         if not isinstance(other, MoveNode):
-            raise TypeError('Invalid camparison target.')
+            raise TypeError('Invalidtarget.')
         if self.is_checkmate and (not other.is_checkmate):
             return False
         elif (not self.is_checkmate) and other.is_checkmate:
             return True
-        elif self.is_checkmate and other.is_checkmate:
+        elif self.is_stalemate and other.is_stalemate:
             return False
-        return self.pointAdvantage > other.pointAdvantage
+        return self.pointAdvantage < other.pointAdvantage
 
     def __eq__(self, other):
         if not isinstance(other, MoveNode):
@@ -54,9 +63,11 @@ class MoveNode:
 
     def findRoot(self):
         root = self
-        while root.parent:
-            root = root.parent
-        return root
+        while True:
+            if root.parent:
+                root = root.parent
+            else:
+                return root
 
     def getDepth(self):
         depth = 1

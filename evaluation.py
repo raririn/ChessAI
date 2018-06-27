@@ -2,13 +2,15 @@ from param import *
 from utils import *
 
 def evaluateBoard(board, side):
-    KING_SCORE = 1000
+    KING_SCORE = 80
     QUEEN_SCORE = 9
     ROOK_SCORE = 5
     BISHOP_SCORE = 3
     KNIGHT_SCORE = 3
     PAWN_SCORE = 1
-    boardString = board.__str__()
+    MOB_SCORE = 0.2
+    CHECKMATE = 2
+    boardString = board.fen().split(' ')[0]
 
     white_rook = boardString.count('R')
     white_king = boardString.count('K')
@@ -39,20 +41,37 @@ def evaluateBoard(board, side):
     KNIGHT_SCORE * black_knight + \
     PAWN_SCORE * black_pawn
 
+    white_checkmate = 0
+    black_checkmate = 0
+
+    if board.turn == WHITE:
+        white_mob_score = MOB_SCORE*board.legal_moves.count()
+        board.push(chess.Move.null())
+        black_mob_score = MOB_SCORE*board.legal_moves.count()
+        board.pop()
+        if board.is_checkmate():
+            black_checkmate = CHECKMATE
+    else:
+        black_mob_score = MOB_SCORE*board.legal_moves.count()
+        board.push(chess.Move.null())
+        white_mob_score = MOB_SCORE*board.legal_moves.count()
+        board.pop()
+        if board.is_checkmate():
+            white_checkmate = CHECKMATE
 
 
     if side == WHITE:
-        white_mob_score = 0.5*len(list(board.legal_moves))
-        board.push(chess.Move.null())
-        black_mob_score = 0.5*len(list(board.legal_moves))
-        board.pop()
-        score = white_piece_score - black_piece_score + white_mob_score - black_mob_score
+        #print(white_piece_score)
+        #print(black_piece_score)
+        #print(white_king)
+        #print(black_king)
+        score = white_piece_score - black_piece_score + white_mob_score - black_mob_score + \
+        white_checkmate - black_checkmate
+        #score = white_piece_score - black_piece_score
     elif side == BLACK:
-        black_mob_score = 0.5*len(list(board.legal_moves))
-        board.push(chess.Move.null())
-        white_mob_score = 0.5*len(list(board.legal_moves))
-        board.pop()
-        score = -(white_piece_score - black_piece_score + white_mob_score - black_mob_score)
+        score = -(white_piece_score - black_piece_score + white_mob_score - black_mob_score + \
+        white_checkmate - black_checkmate)
+        #score = -(white_piece_score - black_piece_score)
     else:
         raise ValueError('Bad side value.')
     if board.is_stalemate():
